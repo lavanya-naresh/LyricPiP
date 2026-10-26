@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Convenience launcher for Ubuntu/Linux: creates a venv on first run, then starts the app.
+# Convenience launcher for Ubuntu/Linux and macOS: creates a venv on first run, then starts the app.
 set -e
 cd "$(dirname "$0")"
 if [ ! -d .venv ]; then

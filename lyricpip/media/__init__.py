@@ -11,4 +11,7 @@ def create_watcher(**kwargs) -> MediaWatcher:
     if sys.platform.startswith("linux"):
         from .linux_mpris import LinuxMPRISWatcher
         return LinuxMPRISWatcher(interval=1.0, **kwargs)
-    raise RuntimeError(f"Unsupported platform: {sys.platform} (Windows and Linux only)")
+    if sys.platform == "darwin":
+        from .macos_applescript import MacOSAppleScriptWatcher
+        return MacOSAppleScriptWatcher(interval=1.0, **kwargs)
+    raise RuntimeError(f"Unsupported platform: {sys.platform} (Windows, Linux and macOS only)")

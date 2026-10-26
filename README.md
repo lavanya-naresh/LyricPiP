@@ -8,10 +8,10 @@ under non-Latin lines.
 
 * Move it by dragging; resize by dragging any edge or corner.
 * Translucent background, so what's behind it stays visible.
-* Windows 10/11 and Ubuntu (22.04+) — Python 3.10+.
+* Windows 10/11, Ubuntu (22.04+) and macOS 13+ — Python 3.10+.
 
 > **MVP status:** the parsing, matching, provider and romanization logic is unit-tested
-> and smoke-tested. The OS-specific parts (Windows SMTC, Linux `playerctl`, the Qt window)
+> and smoke-tested. The OS-specific parts (Windows SMTC, Linux `playerctl`, macOS `osascript`, the Qt window)
 > must be verified on your machines — see *Troubleshooting*.
 
 ---
@@ -24,6 +24,7 @@ under non-Latin lines.
 | GUI | PySide6 (Qt 6) | Frameless/translucent/always-on-top windows on Windows + Linux; OS-native move/resize |
 | Now-playing (Windows) | SMTC via `winrt-*` packages | One API covers Spotify, browsers, VLC, Apple Music… |
 | Now-playing (Linux) | MPRIS via `playerctl` | Every mainstream Linux player/browser exposes MPRIS |
+| Now-playing (macOS) | JXA via built-in `osascript` | No extra dependency; asks Spotify and Apple Music directly, never launches them |
 | HTTP | `requests` (+ `beautifulsoup4` for Genius) | Simple, robust |
 | Romanization | `pykakasi`, `pypinyin`, `korean-romanizer`, `unidecode` | JA / ZH / KO / everything else |
 
@@ -31,7 +32,7 @@ under non-Latin lines.
 
 ```text
  OS media API ──► MediaWatcher thread ──► PlaybackState (title, artist, position…)
- (SMTC/MPRIS)                                   │ polled 10×/s
+ (SMTC/MPRIS/JXA)                               │ polled 10×/s
                                                 ▼
                       Overlay (Qt UI) ◄── LyricsResult ◄── LyricsManager
                        picks current line        │   cache → providers (parallel) → LRC parse → romanize
@@ -46,7 +47,7 @@ lyricpip/
   models.py           dataclasses (TrackInfo, PlaybackState, LyricLine …)
   textutil.py         cleans "(Official Video)", "feat.", "Artist - Title" metadata
   romanize.py         script detection + romanization
-  media/              windows_smtc.py · linux_mpris.py · base.py
+  media/              windows_smtc.py · linux_mpris.py · macos_applescript.py · base.py
   lyrics/             manager.py · lrc.py · matching.py · cache.py
   lyrics/providers/   lrclib · netease · kugou · ovh · genius · lyricstranslate(stub)
   ui/overlay.py       the floating window
@@ -86,9 +87,38 @@ python -m lyricpip
 
 Shortcut: double-click `run.bat`.
 
+### macOS 13+
+
+Detects **Spotify** and **Apple Music** only. Browsers (YouTube, YouTube Music) are not supported:
+since macOS 15.4 the system-wide "now playing" API (MediaRemote) is restricted to entitled Apple
+binaries, so there is no supported way for a third-party app to read browser playback.
+
+1. Install Python 3.10+ from python.org or with `brew install python`
+   (the `python3` bundled with the Xcode Command Line Tools is 3.9, too old).
+2. In Terminal:
+
+```bash
+cd LyricPiP
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+python -m lyricpip
+```
+
+Shortcut: `./run.sh` does the venv + install + launch for you.
+
+**One-time Automation prompt.** The first time Spotify or Music is running, macOS asks
+*"Terminal" wants access to control "Spotify"* (named after the app you started LyricPiP from:
+Terminal, iTerm, VS Code…). Allow it. If you declined, the log says so; turn it back on in
+**System Settings → Privacy & Security → Automation** by enabling Spotify and Music under that app.
+
+LyricPiP only talks to players that are already running: it never launches Spotify or Music,
+and an app that isn't installed is skipped without a dialog.
+
 ### Try it
 
-Start playing something (Spotify, or a YouTube Music tab in Firefox/Chrome), then launch the app.
+Start playing something (Spotify, or a YouTube Music tab in Firefox/Chrome; on macOS Spotify or Music),
+then launch the app.
 The window shows *Searching lyrics…* and then the synced lyrics.
 
 ## 4. Using it
@@ -107,8 +137,10 @@ The window shows *Searching lyrics…* and then the synced lyrics.
 | Quit | Right-click → *Quit* |
 
 Settings and window position are saved to
-`~/.config/LyricPiP/config.json` (Linux) or `%LOCALAPPDATA%\LyricPiP\config.json` (Windows).
-Lyrics are cached in `~/.cache/LyricPiP/lyrics/` (Linux) / `%LOCALAPPDATA%\LyricPiP\Cache\lyrics\` (Windows).
+`~/.config/LyricPiP/config.json` (Linux), `~/Library/Application Support/LyricPiP/config.json` (macOS)
+or `%LOCALAPPDATA%\LyricPiP\config.json` (Windows).
+Lyrics are cached in `~/.cache/LyricPiP/lyrics/` (Linux) / `~/Library/Caches/LyricPiP/lyrics/` (macOS) /
+`%LOCALAPPDATA%\LyricPiP\Cache\lyrics\` (Windows).
 
 ### config.json options
 
@@ -152,6 +184,8 @@ Add a source: copy `lyrics/providers/ovh.py`, implement `fetch`, register it in 
 
 * **"Nothing playing" on Ubuntu** – run `playerctl status`. If it errors, your player has no MPRIS support
   (for Firefox keep the tab playing; for Chrome enable *chrome://flags → Hardware media key handling*).
+* **"Nothing playing" on macOS** – only Spotify and Music are detected (not browsers). If the log mentions
+  Automation, enable Spotify and Music under your terminal app in *System Settings → Privacy & Security → Automation*.
 * **Window not on top / odd on Ubuntu Wayland** – the app forces XWayland (`QT_QPA_PLATFORM=xcb`) because
   GNOME ignores always-on-top for native Wayland windows. If Qt can't start, make sure `libxcb-cursor0` is installed.
 * **Lyrics slightly off in browsers (Windows)** – some browsers report timeline positions sloppily; nudge with `[` / `]`.
