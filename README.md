@@ -11,8 +11,7 @@ under non-Latin lines.
 * Windows 10/11, Ubuntu (22.04+) and macOS 13+ — Python 3.10+.
 
 > **MVP status:** the parsing, matching, provider and romanization logic is unit-tested
-> and smoke-tested. The OS-specific parts (Windows SMTC, Linux `playerctl`, macOS `osascript`, the Qt window)
-> must be verified on your machines — see *Troubleshooting*.
+> and smoke-tested.
 
 ---
 
@@ -190,7 +189,7 @@ Add a source: copy `lyrics/providers/ovh.py`, implement `fetch`, register it in 
   GNOME ignores always-on-top for native Wayland windows. If Qt can't start, make sure `libxcb-cursor0` is installed.
 * **Lyrics slightly off in browsers (Windows)** – some browsers report timeline positions sloppily; nudge with `[` / `]`.
 * **Wrong song matched** – titles from YouTube are messy; use *Re-fetch*, or play from a music app.
-* **Windows: `winrt` import error** – `pip install -r requirements.txt` inside the venv; Python 3.9+ required.
+* **Windows: `winrt` import error** – `pip install -r requirements.txt` inside the venv; Python 3.10+ required.
 * **Logs** – run from a terminal; each provider logs `hit` / `miss` / `failed`.
 
 ## 8. Tests
