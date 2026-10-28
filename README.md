@@ -10,9 +10,6 @@ under non-Latin lines.
 * Translucent background, so what's behind it stays visible.
 * Windows 10/11, Ubuntu (22.04+) and macOS 13+ — Python 3.10+.
 
-> **MVP status:** the parsing, matching, provider and romanization logic is unit-tested
-> and smoke-tested.
-
 ---
 
 ## 1. Tech stack (and why)
